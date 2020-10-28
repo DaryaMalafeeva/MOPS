@@ -79,7 +79,6 @@ S4_list = []
 for k in range(1, M, 1):
     while abs(delta_phi - delta_phi_old) > 1e-8:
         
-        
         # первые производные функции правдоподобия
         d1_dA1 = 1/(sigma_n**2) *\
                 (sum(math.cos(w * k * T + phi_0) * np.array(y1_list)+\
@@ -171,10 +170,17 @@ for k in range(1, M, 1):
                       [d2_dA1dw, d2_dA2dw, d2_dw, d2_dwdphi_0, d2_dwddelta_phi],
                       [d2_dA1dphi_0, d2_A2dphi_0, d2_dwdphi_0, d2_dphi_0, d2_dphi_0ddelta_phi],
                       [d2_dA2ddelta_phi, d2_dA2ddelta_phi, d2_dwddelta_phi, d2_dphi_0ddelta_phi, d2_ddelta_phi]])
-        ы
+        
         # метод дискриминаторов
         lam_array_old = lam_array
         lam_array     = lam_array - np.dot(L,H)
+        
+        # обновляем параметры
+        A1        = lam_array[0]
+        A2        = lam_array[1]
+        w         = lam_array[2]
+        pho_0     = lam_array[3]
+        delta_phi = lam_array[4]
         
     # нижняя граница Рао-Крамера
     J = -inv(H)
