@@ -45,7 +45,7 @@ plt.show()
 f_s = 47.5*1e6
 T   = 1/f_s
 M   = 2048
-k   = 0
+
 
 """----------------------------Моделирование шума---------------------------"""
 sigma_n = 10
@@ -104,7 +104,7 @@ for k in range(1, M, 1):
                         (sum(-A2 * math.sin(w * k * T + phi_0 + delta_phi) * np.array(y3_list)+\
                               A2 * math.cos(w * k * T + phi_0 + delta_phi) * np.array(y4_list)))
                            
-        L = np.array([[d1_dA1, d1_dA2, d1_dw, d1_dphi_0, d1_ddelta_phi]])
+        L = np.array([d1_dA1, d1_dA2, d1_dw, d1_dphi_0, d1_ddelta_phi])
     
         # вторые и смешанные производные функции правдоподобия
         d2_dA1    = (-M)/(sigma_n**2)
