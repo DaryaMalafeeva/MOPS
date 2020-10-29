@@ -50,12 +50,12 @@ sigma_n = 10
 
 """---------------------Начальные параметры алгоритма-----------------------"""
 # начальные значения параметров вектора lam_array
-A1        = 7010
+A1        = 7030
 A2        = 3500
-f         = 0.25*1e6
+f         = 5*1e5
 w         = 2 * math.pi * f
-phi_0     = 150 * math.pi /180
-delta_phi = 75 * math.pi / 180
+phi_0     = math.radians(-60)
+delta_phi = math.radians(-120)
 lam_array = np.array([A1, A2, w, phi_0, delta_phi])
 
 S1_list = []
@@ -64,7 +64,7 @@ S3_list = []
 S4_list = []
 
 """---------------------Алгоритм оценивания параметров----------------------"""
-# начальное значение для метода простой итерации
+# начальное значение для метода простой итерацииs
 delta_phi_old = 0.1 * delta_phi
 
 for k in range(1, M, 1):
@@ -99,8 +99,6 @@ for k in range(1, M, 1):
         # вторые и смешанные производные функции правдоподобия
         d2_dA1    = (-M)/(sigma_n**2)
         
-        d2_dA2    = (-M)/(sigma_n**2)
-        
         d2_dA1dA2 = 0
         
         d2_dA1dw  = 1/(sigma_n**2) *\
@@ -112,6 +110,8 @@ for k in range(1, M, 1):
                               math.cos(w * k * T + phi_0) * np.array(y2_list)))
         
         d2_dA1ddelta_phi = 0
+        
+        d2_dA2    = (-M)/(sigma_n**2)
         
         d2_dA2dw = 1/(sigma_n**2) *\
                     (sum(-math.sin(w * k * T + phi_0 + delta_phi) * k * T * np.array(y3_list)+\
@@ -126,10 +126,10 @@ for k in range(1, M, 1):
                               math.cos(w * k * T + phi_0 + delta_phi) * np.array(y4_list)))
         
         d2_dw = 1/(sigma_n**2) *\
-                    (sum(-A1 * math.sin(w * k * T + phi_0) * ((k * T)**2) * np.array(y1_list)+\
-                          A1 * math.cos(w * k * T + phi_0) * ((k * T)**2) * np.array(y2_list)-\
-                          A2 * math.sin(w * k * T + phi_0 + delta_phi) * ((k * T)**2) * np.array(y3_list)+\
-                          A2 * math.cos(w * k * T + phi_0 + delta_phi) * ((k * T)**2) * np.array(y4_list)))
+                    (sum(-A1 * math.cos(w * k * T + phi_0) * ((k * T)**2) * np.array(y1_list)-\
+                          A1 * math.sin(w * k * T + phi_0) * ((k * T)**2) * np.array(y2_list)-\
+                          A2 * math.cos(w * k * T + phi_0 + delta_phi) * ((k * T)**2) * np.array(y3_list)-\
+                          A2 * math.sin(w * k * T + phi_0 + delta_phi) * ((k * T)**2) * np.array(y4_list)))
         
         d2_dwdphi_0 = 1/(sigma_n**2) *\
                     (sum(-A1 * math.cos(w * k * T + phi_0) * k * T * np.array(y1_list)-\
@@ -175,8 +175,9 @@ for k in range(1, M, 1):
         
     # выход из цикла while
     # ошибка оценивания delta_phi
-    J = -inv(H)
-    D_delta_phi = J[4,4]
+    J = -H
+    D_lambda = inv(J)
+    D_delta_phi = D_lambda[4,4]
     
     # сигналы с оценками параметров
     S1 = A1 * math.cos(w * k * T + phi_0)
