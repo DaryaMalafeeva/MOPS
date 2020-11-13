@@ -314,7 +314,3 @@ D_delta_phi = D_lambda[4,4]
 # plt.title('Сигналы с оценками параметров ')
 # plt.grid()
 # plt.show()   
-
-
-
-
