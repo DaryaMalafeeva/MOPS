@@ -10,9 +10,13 @@ import codecs
 import matplotlib.pyplot as plt
 import math
 from numpy.linalg import inv
+import os
+
+# если однажды создали файл - то удаляем его чтобы не писать в него же
+os.remove('D:\Malafeeva_DD\MOPS\out_parameters.txt')
+os.remove('D:\Malafeeva_DD\MOPS\out_derivatives.txt')
 
 """---------------------------Обработка файла-------------------------------"""
-# инициализация списков
 y1_list = []
 y2_list = []
 y3_list = []
@@ -50,20 +54,19 @@ sigma_n = 10
 
 """---------------------Начальные параметры алгоритма-----------------------"""
 # начальные значения параметров вектора lam_array
-A1            = 7010
-A2            = 3505
-f             = f_s/(234.6-44.93)
-w             = 2 * math.pi * f
-phi_0         = -math.pi/3
-delta_phi     = math.radians(120)
-lam_array     = np.array([A1, A2, w, phi_0, delta_phi])
-delta_phi_old = 0.1 * delta_phi
+A1                  = 7010
+A2                  = 3505
+f                   = f_s/(234.6-44.93)
+w                   = 2 * math.pi * f
+phi_0               = math.radians(-60)
+delta_phi           = math.radians(130)
+lam_array           = np.array([A1, A2, w, phi_0, delta_phi])
+delta_phi_old       = 0.1 * delta_phi
 
-S1_list = []
-S2_list = []
-S3_list = []
-S4_list = []
-
+S1_list             = []
+S2_list             = []
+S3_list             = []
+S4_list             = []
 d1_dA1              = 0
 d1_dA2              = 0
 d1_dw               = 0
@@ -80,9 +83,16 @@ d2_dwddelta_phi     = 0
 d2_dphi_0           = 0
 d2_dphi_0ddelta_phi = 0
 d2_ddelta_phi       = 0
+while_count         = 0 
 
-# счетчик чтобы понять сколько делает итераций 
-while_count = 0 
+k = 0
+
+# синусы и косинусы
+sin_A1 = math.sin(w * k * T + phi_0)
+sin_A2 = math.sin(w * k * T + phi_0 + delta_phi)
+cos_A1 = math.cos(w * k * T + phi_0)
+cos_A2 = math.cos(w * k * T + phi_0 + delta_phi)
+
 """---------------------Алгоритм оценивания параметров----------------------"""
 while(abs(delta_phi - delta_phi_old)>1e-8):
     while_count+=1
@@ -91,98 +101,75 @@ while(abs(delta_phi - delta_phi_old)>1e-8):
         y2_k = y2_list[k]
         y3_k = y3_list[k]
         y4_k = y4_list[k]
-        
+          
         # первые производные функции правдоподобия
-        d1_dA1_k = math.cos(w * k * T + phi_0) * y1_k + math.sin(w * k * T + phi_0) * y2_k - A1
+        d1_dA1_k = cos_A1 * y1_k + sin_A1 * y2_k - A1
         d1_dA1 += d1_dA1_k
         
-        d1_dA2_k = math.cos(w * k * T + phi_0 + delta_phi) * y3_k +\
-                   math.sin(w * k * T + phi_0 + delta_phi) * y4_k - A2
+        d1_dA2_k = cos_A2 * y3_k + sin_A2 * y4_k - A2
         d1_dA2 += d1_dA2_k
         
-        d1_dw_k  = -A1 * math.sin(w * k * T + phi_0) * k * T * y1_k +\
-                    A1 * math.cos(w * k * T + phi_0) * k * T * y2_k -\
-                    A2 * math.sin(w * k * T + phi_0 + delta_phi) * k * T * y3_k +\
-                    A2 * math.cos(w * k * T + phi_0 + delta_phi) * k * T * y4_k
+        d1_dw_k  = -A1 * sin_A1 * k * T * y1_k + A1 * cos_A1 * k * T * y2_k -\
+                    A2 * sin_A2 * k * T * y3_k + A2 * cos_A2 * k * T * y4_k
         d1_dw += d1_dw_k
         
-        d1_dphi_0_k  = -A1 * math.sin(w * k * T + phi_0) * y1_k +\
-                        A1 * math.cos(w * k * T + phi_0) * y2_k -\
-                        A2 * math.sin(w * k * T + phi_0 + delta_phi) * y3_k +\
-                        A2 * math.cos(w * k * T + phi_0 + delta_phi) * y4_k
+        d1_dphi_0_k  = -A1 * sin_A1 * y1_k + A1 * cos_A1 * y2_k -\
+                        A2 * sin_A2 * y3_k + A2 * cos_A2 * y4_k
         d1_dphi_0 += d1_dphi_0_k
         
-        d1_ddelta_phi_k = -A2 * math.sin(w * k * T + phi_0 + delta_phi) * y3_k +\
-                           A2 * math.cos(w * k * T + phi_0 + delta_phi) * y4_k
+        d1_ddelta_phi_k = -A2 * sin_A2 * y3_k + A2 * cos_A2 * y4_k
         d1_ddelta_phi += d1_ddelta_phi_k
         
         # вторые и смешанные производные
-        d2_dA1     = (-1) * M/(sigma_n**2)
-        
-        d2_dA1dA2 = 0
-        
-        d2_dA1dw_k = -math.sin(w * k * T + phi_0) * k * T * y1_k +\
-                      math.cos(w * k * T + phi_0) * k * T * y2_k
+        d2_dA1dw_k = -sin_A1 * k * T * y1_k + cos_A1 * k * T * y2_k
         d2_dA1dw += d2_dA1dw_k
         
-        d2_dA1dphi_0_k = -math.sin(w * k * T + phi_0) * y1_k +\
-                          math.cos(w * k * T + phi_0) * y2_k
+        d2_dA1dphi_0_k = -sin_A1 * y1_k + cos_A1 * y2_k
         d2_dA1dphi_0 += d2_dA1dphi_0_k
         
-        d2_dA1ddelta_phi = 0
-        
-        d2_dA2    = (-1) * M/(sigma_n**2)
-        
-        d2_dA2dw_k = -math.sin(w * k * T + phi_0 + delta_phi) * k * T * y3_k +\
-                      math.cos(w * k * T + phi_0 + delta_phi) * k * T * y4_k
+        d2_dA2dw_k = -sin_A2 * k * T * y3_k + cos_A2 * k * T * y4_k
         d2_dA2dw += d2_dA2dw_k
         
-        d2_A2dphi_0_k = -math.sin(w * k * T + phi_0 + delta_phi) * y3_k +\
-                         math.cos(w * k * T + phi_0 + delta_phi) * y4_k
+        d2_A2dphi_0_k = -sin_A2 * y3_k + cos_A2 * y4_k
         d2_A2dphi_0 += d2_A2dphi_0_k
         
-        d2_dA2ddelta_phi_k = -math.sin(w * k * T + phi_0 + delta_phi) * y3_k +\
-                              math.cos(w * k * T + phi_0 + delta_phi) * y4_k
+        d2_dA2ddelta_phi_k = -sin_A2 * y3_k + cos_A2 * y4_k
         d2_dA2ddelta_phi += d2_dA2ddelta_phi_k
         
-        d2_dw_k = -A1 * math.cos(w * k * T + phi_0) * ((k * T)**2) * y1_k -\
-                   A1 * math.sin(w * k * T + phi_0) * ((k * T)**2) * y2_k -\
-                   A2 * math.cos(w * k * T + phi_0 + delta_phi) * ((k * T)**2) * y3_k -\
-                   A2 * math.sin(w * k * T + phi_0 + delta_phi) * ((k * T)**2) * y4_k
+        d2_dw_k = -A1 * cos_A1 * k**2 * T**2 * y1_k - A1 * sin_A1 * k**2 * T**2 * y2_k -\
+                   A2 * cos_A2 * k**2 * T**2 * y3_k - A2 * sin_A2 * k**2 * T**2 * y4_k
         d2_dw += d2_dw_k
         
-        d2_dwdphi_0_k = -A1 * math.cos(w * k * T + phi_0) * k * T * y1_k -\
-                         A1 * math.sin(w * k * T + phi_0) * k * T * y2_k -\
-                         A2 * math.cos(w * k * T + phi_0 + delta_phi) * k * T * y3_k -\
-                         A2 * math.sin(w * k * T + phi_0 + delta_phi) * k * T * y4_k
+        d2_dwdphi_0_k = -A1 * cos_A1 * k * T * y1_k - A1 * sin_A1 * k * T * y2_k -\
+                         A2 * cos_A2 * k * T * y3_k - A2 * sin_A2 * k * T * y4_k
         d2_dwdphi_0 += d2_dwdphi_0_k
         
-        d2_dwddelta_phi_k = -A2 * math.cos(w * k * T + phi_0 + delta_phi) * k * T * y3_k -\
-                             A2 * math.sin(w * k * T + phi_0 + delta_phi) * k * T * y4_k
+        d2_dwddelta_phi_k = -A2 * cos_A2 * k * T * y3_k - A2 * sin_A2 * k * T * y4_k
         d2_dwddelta_phi += d2_dwddelta_phi_k
         
-        d2_dphi_0_k = -A1 * math.cos(w * k * T + phi_0) * y1_k -\
-                       A1 * math.sin(w * k * T + phi_0) * y2_k -\
-                       A2 * math.cos(w * k * T + phi_0 + delta_phi) * y3_k -\
-                       A2 * math.sin(w * k * T + phi_0 + delta_phi) * y4_k
+        d2_dphi_0_k = -A1 * cos_A1 * y1_k - A1 * sin_A1 * y2_k -\
+                       A2 * cos_A2 * y3_k - A2 * sin_A2 * y4_k
         d2_dphi_0 += d2_dphi_0_k
         
-        d2_dphi_0ddelta_phi_k = -A2 * math.cos(w * k * T + phi_0 + delta_phi) * y3_k -\
-                                 A2 * math.sin(w * k * T + phi_0 + delta_phi) * y4_k
+        d2_dphi_0ddelta_phi_k = -A2 * cos_A2 * y3_k - A2 * sin_A2 * y4_k
         d2_dphi_0ddelta_phi += d2_dphi_0ddelta_phi_k
         
-        d2_ddelta_phi_k = -A2 * math.cos(w * k * T + phi_0 + delta_phi) * y3_k -\
-                           A2 * math.sin(w * k * T + phi_0 + delta_phi) * y4_k
+        d2_ddelta_phi_k = -A2 * cos_A2 * y3_k - A2 * sin_A2 * y4_k
         d2_ddelta_phi += d2_ddelta_phi_k
-        
+    
     d1_dA1              *= 1/(sigma_n**2) 
     d1_dA2              *= 1/(sigma_n**2) 
     d1_dw               *= 1/(sigma_n**2) 
     d1_dphi_0           *= 1/(sigma_n**2)
     d1_ddelta_phi       *= 1/(sigma_n**2) 
+    
+    d2_dA1               =-M/(sigma_n**2)
+    d2_dA1dA2            = 0
     d2_dA1dw            *= 1/(sigma_n**2) 
     d2_dA1dphi_0        *= 1/(sigma_n**2) 
-    d2_dA2dw            *= 1/(sigma_n**2) 
+    d2_dA2dw            *= 1/(sigma_n**2)
+    d2_dA1ddelta_phi     = 0
+    d2_dA2               =-M/(sigma_n**2)
     d2_A2dphi_0         *= 1/(sigma_n**2) 
     d2_dA2ddelta_phi    *= 1/(sigma_n**2) 
     d2_dw               *= 1/(sigma_n**2) 
@@ -192,6 +179,59 @@ while(abs(delta_phi - delta_phi_old)>1e-8):
     d2_dphi_0ddelta_phi *= 1/(sigma_n**2) 
     d2_ddelta_phi       *= 1/(sigma_n**2) 
     
+    
+    # пишем в файл производные
+    file_drv = open('out_derivatives.txt', 'a')
+    file_drv.write('Итерация №' + str(while_count))
+    file_drv.write('\n')
+    file_drv.write('Значения производных:')
+    file_drv.write('\n')
+    file_drv.write('d1_dA1=' + str(d1_dA1))
+    file_drv.write('\n')
+    file_drv.write('d1_dA2=' + str(d1_dA2))
+    file_drv.write('\n')
+    file_drv.write('d1_dw=' + str(d1_dw))
+    file_drv.write('\n')
+    file_drv.write('d1_dphi_0=' + str(d1_dphi_0))
+    file_drv.write('\n')
+    file_drv.write('d1_dphi_0=' + str(d1_dphi_0))
+    file_drv.write('\n')
+    file_drv.write('d1_ddelta_phi=' + str(d1_ddelta_phi))
+    file_drv.write('\n')
+    file_drv.write('d2_dA1=' + str(d2_dA1))
+    file_drv.write('\n')
+    file_drv.write('d2_dA1dA2=' + str(d2_dA1dA2))                                                                                
+    file_drv.write('\n')
+    file_drv.write('d2_dA1dw=' + str(d2_dA1dw))
+    file_drv.write('\n')
+    file_drv.write('d2_dA1dphi_0=' + str(d2_dA1dphi_0)) 
+    file_drv.write('\n')
+    file_drv.write('d2_dA2dw=' + str(d2_dA2dw)) 
+    file_drv.write('\n')
+    file_drv.write('d2_dA1ddelta_phi=' + str(d2_dA1ddelta_phi))    
+    file_drv.write('\n')
+    file_drv.write('d2_dA2=' + str(d2_dA2))    
+    file_drv.write('\n')
+    file_drv.write('d2_A2dphi_0=' + str(d2_A2dphi_0)) 
+    file_drv.write('\n')
+    file_drv.write('d2_dA2ddelta_phi=' + str(d2_dA2ddelta_phi)) 
+    file_drv.write('\n')
+    file_drv.write('d2_dw=' + str(d2_dw))     
+    file_drv.write('\n')
+    file_drv.write('d2_dwdphi_0=' + str(d2_dwdphi_0))         
+    file_drv.write('\n')
+    file_drv.write('d2_dwddelta_phi=' + str(d2_dwddelta_phi))      
+    file_drv.write('\n')
+    file_drv.write('d2_dphi_0=' + str(d2_dphi_0))        
+    file_drv.write('\n')
+    file_drv.write('d2_dphi_0ddelta_phi=' + str(d2_dphi_0ddelta_phi))  
+    file_drv.write('\n')
+    file_drv.write('d2_ddelta_phi=' + str(d2_ddelta_phi)) 
+    file_drv.write('\n')
+    file_drv.write('-------------------------------------------------------------')
+    file_drv.write('\n')
+    file_drv.close()
+
     L = np.array([d1_dA1, d1_dA2, d1_dw, d1_dphi_0, d1_ddelta_phi])
     
     H = np.array([[d2_dA1,           d2_dA1dA2,        d2_dA1dw,        d2_dA1dphi_0,        d2_dA1ddelta_phi],
@@ -200,8 +240,7 @@ while(abs(delta_phi - delta_phi_old)>1e-8):
                   [d2_dA1dphi_0,     d2_A2dphi_0,      d2_dwdphi_0,     d2_dphi_0,           d2_dphi_0ddelta_phi],
                   [d2_dA1ddelta_phi, d2_dA2ddelta_phi, d2_dwddelta_phi, d2_dphi_0ddelta_phi, d2_ddelta_phi]])
     
-    lam_array_old = lam_array
-    lam_array     = lam_array_old - np.dot(L,H)
+    lam_array     = lam_array - np.dot(L,H)
         
     # обновляем параметры
     # (вне цикла for потому что в нем параметры сигналов постоянны)
@@ -212,7 +251,25 @@ while(abs(delta_phi - delta_phi_old)>1e-8):
     delta_phi_old = delta_phi
     delta_phi     = lam_array[4]
     
-    # вывож 
+    # пишем в файл оценки параметров сигнала
+    file = open('out_parameters.txt', 'a')
+    file.write('Итерация №' + str(while_count))
+    file.write('\n')
+    file.write('Оценки параметров сигнала:')
+    file.write('\n')
+    file.write('A1=' + str(A1))
+    file.write('\n')
+    file.write('A2=' + str(A2))
+    file.write('\n')
+    file.write('w=' + str(w))
+    file.write('\n')
+    file.write('phi_0=' + str(phi_0))
+    file.write('\n')
+    file.write('delta_phi=' + str(delta_phi))
+    file.write('\n')
+    file.write('-------------------------------------------------------------')
+    file.write('\n')
+    file.close()
     
     # # сигналы с оценками параметров
     # S1 = A1 * math.cos(w * k * T + phi_0)
