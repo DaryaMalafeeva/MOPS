@@ -85,13 +85,7 @@ d2_dphi_0ddelta_phi = 0
 d2_ddelta_phi       = 0
 while_count         = 0 
 
-k = 0
 
-# синусы и косинусы
-sin_A1 = math.sin(w * k * T + phi_0)
-sin_A2 = math.sin(w * k * T + phi_0 + delta_phi)
-cos_A1 = math.cos(w * k * T + phi_0)
-cos_A2 = math.cos(w * k * T + phi_0 + delta_phi)
 
 """---------------------Алгоритм оценивания параметров----------------------"""
 while(abs(delta_phi - delta_phi_old)>1e-8):
@@ -101,7 +95,13 @@ while(abs(delta_phi - delta_phi_old)>1e-8):
         y2_k = y2_list[k]
         y3_k = y3_list[k]
         y4_k = y4_list[k]
-          
+         
+        # синусы и косинусы
+        sin_A1 = math.sin(w * k * T + phi_0)
+        sin_A2 = math.sin(w * k * T + phi_0 + delta_phi)
+        cos_A1 = math.cos(w * k * T + phi_0)
+        cos_A2 = math.cos(w * k * T + phi_0 + delta_phi)
+        
         # первые производные функции правдоподобия
         d1_dA1_k = cos_A1 * y1_k + sin_A1 * y2_k - A1
         d1_dA1 += d1_dA1_k
