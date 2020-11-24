@@ -45,7 +45,6 @@ delta_phi           = math.radians(130)
 lam_array           = np.array([A1, A2, w, phi_0, delta_phi])
 delta_phi_old       = 0.1 * delta_phi
 while_count         = 0 
-
 S1_list             = []
 S2_list             = []
 S3_list             = []
@@ -66,6 +65,7 @@ d2_dwddelta_phi     = 0
 d2_dphi_0           = 0
 d2_dphi_0ddelta_phi = 0
 d2_ddelta_phi       = 0
+
 """---------------------Алгоритм оценивания параметров----------------------"""
 while(abs(delta_phi - delta_phi_old)>1e-8):
     while_count+=1
@@ -82,66 +82,65 @@ while(abs(delta_phi - delta_phi_old)>1e-8):
         cos_A2 = math.cos(w * k * T + phi_0 + delta_phi)
         
         # первые производные функции правдоподобия
-        d1_dA1 = (cos_A1 * y1_k + sin_A1 * y2_k) - A1
-        d1_dA1 += d1_dA1
+        d1_dA1_k = (cos_A1 * y1_k + sin_A1 * y2_k) - A1
+        d1_dA1 += d1_dA1_k
         
-        d1_dA2 = (cos_A2 * y3_k + sin_A2 * y4_k) - A2
-        d1_dA2 += d1_dA2
+        d1_dA2_k = (cos_A2 * y3_k + sin_A2 * y4_k) - A2
+        d1_dA2 += d1_dA2_k
         
-        d1_dw  = -A1 * sin_A1 * k * T * y1_k + A1 * cos_A1 * k * T * y2_k -\
+        d1_dw_k  = -A1 * sin_A1 * k * T * y1_k + A1 * cos_A1 * k * T * y2_k -\
                     A2 * sin_A2 * k * T * y3_k + A2 * cos_A2 * k * T * y4_k
-        d1_dw += d1_dw
+        d1_dw += d1_dw_k
         
-        d1_dphi_0  = -A1 * sin_A1 * y1_k + A1 * cos_A1 * y2_k -\
+        d1_dphi_0_k  = -A1 * sin_A1 * y1_k + A1 * cos_A1 * y2_k -\
                         A2 * sin_A2 * y3_k + A2 * cos_A2 * y4_k
-        d1_dphi_0 += d1_dphi_0
+        d1_dphi_0 += d1_dphi_0_k
         
-        d1_ddelta_phi = -A2 * sin_A2 * y3_k + A2 * cos_A2 * y4_k
-        d1_ddelta_phi += d1_ddelta_phi
+        d1_ddelta_phi_k = -A2 * sin_A2 * y3_k + A2 * cos_A2 * y4_k
+        d1_ddelta_phi += d1_ddelta_phi_k
         
         # вторые и смешанные производные
-        d2_dA1dw = -sin_A1 * k * T * y1_k + cos_A1 * k * T * y2_k
-        d2_dA1dw += d2_dA1dw
+        d2_dA1dw_k = -sin_A1 * k * T * y1_k + cos_A1 * k * T * y2_k
+        d2_dA1dw += d2_dA1dw_k
         
-        d2_dA1dphi_0 = -sin_A1 * y1_k + cos_A1 * y2_k
-        d2_dA1dphi_0 += d2_dA1dphi_0
+        d2_dA1dphi_0_k = -sin_A1 * y1_k + cos_A1 * y2_k
+        d2_dA1dphi_0 += d2_dA1dphi_0_k
         
-        d2_dA2dw = -sin_A2 * k * T * y3_k + cos_A2 * k * T * y4_k
-        d2_dA2dw += d2_dA2dw
+        d2_dA2dw_k = -sin_A2 * k * T * y3_k + cos_A2 * k * T * y4_k
+        d2_dA2dw += d2_dA2dw_k
         
-        d2_A2dphi_0 = -sin_A2 * y3_k + cos_A2 * y4_k
-        d2_A2dphi_0 += d2_A2dphi_0
+        d2_A2dphi_0_k = -sin_A2 * y3_k + cos_A2 * y4_k
+        d2_A2dphi_0 += d2_A2dphi_0_k
         
-        d2_dA2ddelta_phi = -sin_A2 * y3_k + cos_A2 * y4_k
-        d2_dA2ddelta_phi += d2_dA2ddelta_phi
+        d2_dA2ddelta_phi_k = -sin_A2 * y3_k + cos_A2 * y4_k
+        d2_dA2ddelta_phi += d2_dA2ddelta_phi_k
         
-        d2_dw = -A1 * cos_A1 * k**2 * T**2 * y1_k - A1 * sin_A1 * k**2 * T**2 * y2_k -\
+        d2_dw_k = -A1 * cos_A1 * k**2 * T**2 * y1_k - A1 * sin_A1 * k**2 * T**2 * y2_k -\
                    A2 * cos_A2 * k**2 * T**2 * y3_k - A2 * sin_A2 * k**2 * T**2 * y4_k
-        d2_dw += d2_dw
+        d2_dw += d2_dw_k
         
-        d2_dwdphi_0 = -A1 * cos_A1 * k * T * y1_k - A1 * sin_A1 * k * T * y2_k -\
+        d2_dwdphi_0_k = -A1 * cos_A1 * k * T * y1_k - A1 * sin_A1 * k * T * y2_k -\
                          A2 * cos_A2 * k * T * y3_k - A2 * sin_A2 * k * T * y4_k
-        d2_dwdphi_0 += d2_dwdphi_0
+        d2_dwdphi_0 += d2_dwdphi_0_k
         
-        d2_dwddelta_phi = -A2 * cos_A2 * k * T * y3_k - A2 * sin_A2 * k * T * y4_k
-        d2_dwddelta_phi += d2_dwddelta_phi
+        d2_dwddelta_phi_k = -A2 * cos_A2 * k * T * y3_k - A2 * sin_A2 * k * T * y4_k
+        d2_dwddelta_phi += d2_dwddelta_phi_k
         
-        d2_dphi_0 = -A1 * cos_A1 * y1_k - A1 * sin_A1 * y2_k -\
+        d2_dphi_0_k = -A1 * cos_A1 * y1_k - A1 * sin_A1 * y2_k -\
                        A2 * cos_A2 * y3_k - A2 * sin_A2 * y4_k
-        d2_dphi_0 += d2_dphi_0
+        d2_dphi_0 += d2_dphi_0_k
         
-        d2_dphi_0ddelta_phi = -A2 * cos_A2 * y3_k - A2 * sin_A2 * y4_k
-        d2_dphi_0ddelta_phi += d2_dphi_0ddelta_phi
+        d2_dphi_0ddelta_phi_k = -A2 * cos_A2 * y3_k - A2 * sin_A2 * y4_k
+        d2_dphi_0ddelta_phi += d2_dphi_0ddelta_phi_k
         
-        d2_ddelta_phi = -A2 * cos_A2 * y3_k - A2 * sin_A2 * y4_k
-        d2_ddelta_phi += d2_ddelta_phi
+        d2_ddelta_phi_k = -A2 * cos_A2 * y3_k - A2 * sin_A2 * y4_k
+        d2_ddelta_phi += d2_ddelta_phi_k
         
     d1_dA1              *= 1/(sigma_n**2) 
     d1_dA2              *= 1/(sigma_n**2) 
     d1_dw               *= 1/(sigma_n**2) 
     d1_dphi_0           *= 1/(sigma_n**2)
     d1_ddelta_phi       *= 1/(sigma_n**2) 
-    
     d2_dA1               =-M/(sigma_n**2)
     d2_dA1dA2            = 0
     d2_dA1dw            *= 1/(sigma_n**2) 
@@ -176,23 +175,24 @@ while(abs(delta_phi - delta_phi_old)>1e-8):
     delta_phi_old = delta_phi
     delta_phi     = lam_array[4]
     
-    d1_dA1              = 0
-    d1_dA2              = 0
-    d1_dw               = 0
-    d1_dphi_0           = 0 
-    d1_ddelta_phi       = 0
-    d2_dA1dw            = 0
-    d2_dA1dphi_0        = 0
-    d2_dA2dw            = 0
-    d2_A2dphi_0         = 0
-    d2_dA2ddelta_phi    = 0
-    d2_dw               = 0
-    d2_dwdphi_0         = 0
-    d2_dwddelta_phi     = 0
-    d2_dphi_0           = 0
-    d2_dphi_0ddelta_phi = 0
-    d2_ddelta_phi       = 0
-    
+    # очищаем счетчики перед следующим заходом в while
+    d1_dA1_k              = 0
+    d1_dA2_k              = 0
+    d1_dw_k               = 0
+    d1_dphi_0_k           = 0 
+    d1_ddelta_phi_k       = 0
+    d2_dA1dw_k            = 0
+    d2_dA1dphi_0_k        = 0
+    d2_dA2dw_k            = 0
+    d2_A2dphi_0_k         = 0
+    d2_dA2ddelta_phi_k    = 0
+    d2_dw_k               = 0
+    d2_dwdphi_0_k         = 0
+    d2_dwddelta_phi_k     = 0
+    d2_dphi_0_k           = 0
+    d2_dphi_0ddelta_phi_k = 0
+    d2_ddelta_phi_k       = 0
+
 D_lambda = inv(-H)
 D_delta_phi = D_lambda[4,4]
 
@@ -212,10 +212,10 @@ for k in range(0,M):
     S4_list.append(S4)
 
 figure_1 = plt.subplot(2,1,1)
-plt.plot(range(0, len(y1_list)), y1_list, color = 'hotpink', linewidth = 2)
-plt.plot(range(0, len(S1_list)), S1_list, '.-', color = 'deeppink', linewidth = 1)
-plt.plot(range(0, len(y3_list)), y3_list, color = 'gold', linewidth = 2)
-plt.plot(range(0, len(S3_list)), S3_list, '.-', color = 'darkgoldenrod', linewidth = 1)
+plt.plot(range(0, len(y1_list)), y1_list, color = 'hotpink', linewidth = 4)
+plt.plot(range(0, len(S1_list)), S1_list, '.-', color = 'deeppink', linewidth = 2)
+plt.plot(range(0, len(y3_list)), y3_list, color = 'gold', linewidth = 4)
+plt.plot(range(0, len(S3_list)), S3_list, '.-', color = 'darkgoldenrod', linewidth = 2)
 plt.xlabel('k')
 plt.ylabel('y1(k), S1(k), y3(k), S3(k)')
 plt.legend(['y1','S1','y3', 'S3'])
@@ -224,10 +224,10 @@ plt.grid()
 plt.show()   
 
 figure_2 = plt.subplot(2,1,2)
-plt.plot(range(0, len(y2_list)), y2_list, color = 'orange', linewidth = 2)
+plt.plot(range(0, len(y2_list)), y2_list, color = 'orange', linewidth = 4)
 plt.plot(range(0, len(S2_list)), S2_list, '.-', color = 'orangered', linewidth = 1)
-plt.plot(range(0, len(y4_list)), y4_list, color = 'limegreen', linewidth = 2)
-plt.plot(range(0, len(S4_list)), S4_list, '.-', color = 'forestgreen', linewidth = 1)
+plt.plot(range(0, len(y4_list)), y4_list, color = 'limegreen', linewidth = 4)
+plt.plot(range(0, len(S4_list)), S4_list, '.-', color = 'forestgreen', linewidth = 2)
 plt.xlabel('k')
 plt.ylabel('y2(k), S2(k), y4(k), S4(k)')
 plt.legend(['y2','S2','y4', 'S4'])
