@@ -10,14 +10,14 @@ from numpy.linalg import inv
 import matplotlib.pyplot as plt
 
 
-"""-----------------------------Параметры моделирования---------------------"""
+"""---------------------------Параметры моделирования-----------------------"""
 T      = 10e-3  
-M      = 100000
+M      = 500000
 c      = 3e8
 w0     = 2 * math.pi * 1602e6
 
 t_list = []
-"""-----------------------Моделируем шум------------------------------------"""
+"""-------------------------------Моделируем шум----------------------------"""
 # формирующий шум скорости
 alpha     = 1
 sigma_a   = 10
@@ -34,18 +34,18 @@ N0        = (2 / (q_c_n0 * T**2)) * (1 + (1/(2 * q_c_n0 * T)))
 sigma_n   = math.sqrt(N0/(2 * T))
 n_list    = np.random.normal(loc = 0.0, scale = sigma_n * 1, size = M)
 
-"""---------------------------Инициализация--------------------------------"""
+"""----------------------------Инициализация--------------------------------"""
 # начальные значения истинных параметров
-Omega_true      = 100
-v_true          = 100
-Omega_true_list = []
-v_true_list     = []
+Omega_true            = 100
+v_true                = 100
+Omega_true_list       = []
+v_true_list           = []
 
 # начальные значения скорректированных оценок
-Omega_corr        = 0
-v_corr            = 0
-Omega_corr_list   = [] 
-v_corr_list       = [] 
+Omega_corr            = 0
+v_corr                = 0
+Omega_corr_list       = [] 
+v_corr_list           = [] 
 sigma_Omega_corr_list = []
 
 # матрицы фильтра
@@ -73,13 +73,13 @@ D_ksi    = np.array([[sigma_ksi**2]])                               # 1x1
 D_n      = np.array([[sigma_n**2]])  
 
 F        = np.array([[1,              T],\
-                     [0, (1 - alpha * T)]])                      # 2x2
+                     [0, (1 - alpha * T)]])                         # 2x2
     
 for k in range(0, M, 1):
     t = k * T
     t_list.append(t)
     """----------------------Входное воздействие----------------------------"""
-    X_true = F.dot(X_true) + G.dot(ksi_k)
+    X_true     = F.dot(X_true) + G.dot(ksi_k)
     
     ksi_k      = np.array([[ksi_list[k]]])
     
@@ -99,7 +99,6 @@ for k in range(0, M, 1):
     D_x_extr_pt2 = (G.dot(D_ksi)).dot(G.transpose())               # 2x2
 
     D_x_extr     = D_x_extr_pt1 + D_x_extr_pt2                     # 2x2
-    
         
     """------------------------------Коррекция------------------------------"""
     K            = (D_x_extr.dot(H.transpose())).dot(inv(((H.dot(D_x_extr)).dot(H.transpose())) + D_n))  # 2x1
@@ -109,16 +108,12 @@ for k in range(0, M, 1):
     X_corr       = X_extr + K.dot(y - H.dot(X_extr))               # 2x1
     
     Omega_corr   = X_corr[0]
-    
     Omega_corr_list.append(Omega_corr)
     
     v_corr       = X_corr[1]
-
     v_corr_list.append(v_corr)    
     
-    # СКО ошибки оценивания доплеровской частоты
     sigma_Omega_corr = math.sqrt(D_x_corr[0,0])
-    
     sigma_Omega_corr_list.append(sigma_Omega_corr)
     
     
