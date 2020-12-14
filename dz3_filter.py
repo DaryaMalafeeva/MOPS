@@ -10,12 +10,12 @@ from numpy.linalg import inv
 import matplotlib.pyplot as plt
 
 """-----------------------------Параметры моделирования---------------------"""
-T        = 10 * 1e-3 
+T        = 10  * 1e-3 
 T_d      = 0.2 * 1e-6
 mod_time = 2
 c        = 3* 1e8
-w0       = 2 * math.pi * 1602e6
-w_p      = 2 * math.pi * 2 * 1e6
+w0       = 2 * math.pi * 1602* 1e6
+w_p      = 2 * math.pi * 2   * 1e6
 alpha    = 1
 q_c_n0   = 10 ** (0.1 * 30)
 t_list   = []
@@ -44,11 +44,10 @@ Omega_true      = 100
 v_true          = 100
 
 # начальные значения скорректированных оценок
-a_corr                = 0.5
-phi_corr              = 0
-Omega_corr            = 0
-v_corr                = 0
-
+a_corr          = 0.5
+phi_corr        = 0
+Omega_corr      = 0
+v_corr          = 0
 
 # матрицы фильтра
 X_true   = np.array([[a_true],\
@@ -61,7 +60,6 @@ X_corr   = np.array([[a_corr],\
                       [Omega_corr],\
                       [v_corr]])                                     # 4x1
     
-I        = np.eye(4)                                                # 4x4
 
 C        = np.array([[1, 0, 0, 0],\
                      [0, 1, 0, 0]])                                       # 1x2
@@ -104,14 +102,13 @@ W        = np.array([[W11, W12],\
 k   = 0
 t_k = 0
 while t_k < mod_time:
-    k+=1
     t_k +=T
     
     """----------------------Входное воздействие----------------------------"""
     X_true  = F.dot(X_true) + G.dot(psi_ksi)
     
-    psi_ksi  = np.array([[psi_list[k]],\
-                         [ksi_list[k]]]) 
+    psi_ksi = np.array([[psi_list[k]],\
+                        [ksi_list[k]]]) 
         
     # амплитуда
     if t_k < 1:
@@ -131,31 +128,33 @@ while t_k < mod_time:
     W22          = (N *((X_extr[0][0])**2))/(2 * sigma_n**2)
     
     """--------------------------Коррелятор---------------------------------"""
-    
     # фаза
-    phi_p = np.array(range(0, N, 1)) * T_d * w_p
+    phi_p        = np.array(range(0, N, 1)) * T_d * w_p
     
-    y     = X_true[0][0] * np.cos(phi_p + X_true[1][0]) + np.random.random(N) * sigma_n
+    y            = X_true[0][0] * np.cos(phi_p + X_true[1][0]) + n_list[k]
     
-    S_sin = np.sin(phi_p + X_corr[1][0])
+    S_sin        = np.sin(phi_p + X_corr[1][0])
     
-    S_cos = np.cos(phi_p + X_corr[1][0])
+    S_cos        = np.cos(phi_p + X_corr[1][0])
     
-    I     = np.sum(np.multiply(y, S_cos.transpose()))
+    I            = np.sum(np.dot(y, S_cos))
     
-    Q     = np.sum(np.multiply(y, S_sin.transpose()))
+    Q            = np.sum(np.dot(y, S_sin))
     
-    U_1   = I * (1/D_n) - (X_extr[0][0] * N)/(2 * D_n)
+    U_1          = I * (1/D_n) - (X_extr[0][0] * N)/(2 * D_n)
     
-    U_2   = Q * (X_extr[0][0])/(D_n)
+    U_2          = Q * (X_extr[0][0])/(D_n)
     
-    U     = np.array([U_1[0],\
-                      U_2[0]])
+    U            = np.array([U_1[0],\
+                             U_2[0]])
+        
     """------------------------------Коррекция------------------------------"""
     
     D_x_corr     = inv(inv(D_x_extr) + ((C.transpose().dot(W)).dot(C)))  # 4x4        
     
     X_corr       = X_extr + ((D_x_corr.dot(C.transpose())).dot(U))     # 4x1
+    
+    k+=1
     
     print('--------------')
     print('Шаг №' + str(k))
