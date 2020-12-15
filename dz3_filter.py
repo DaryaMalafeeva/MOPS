@@ -12,10 +12,10 @@ import matplotlib.pyplot as plt
 """-----------------------------Параметры моделирования---------------------"""
 T        = 10  * 1e-3 
 T_d      = 0.2 * 1e-6
-mod_time = 2
+mod_time = 2                # в секундах
 c        = 3* 1e8
-w0       = 2 * math.pi * 1602* 1e6
-w_p      = 2 * math.pi * 2   * 1e6
+w0       = 2 * math.pi * 1602 * 1e6
+w_p      = 2 * math.pi * 2    * 1e6
 alpha    = 1
 q_c_n0   = 10 ** (0.1 * 30)
 t_list   = []
@@ -62,27 +62,23 @@ X_corr   = np.array([[a_corr],\
     
 
 C        = np.array([[1, 0, 0, 0],\
-                     [0, 1, 0, 0]])                                       # 1x2
+                     [0, 1, 0, 0]])                                  # 1x2
 
 D_x_corr = np.array([[(0.3)**2, 0, 0, 0],\
                       [0, (math.pi)**2, 0, 0],\
                       [0, 0, 34**2, 0],\
-                      [0, 0, 0, 340**2]])                             # 4x4
+                      [0, 0, 0, 340**2]])                            # 4x4
    
 G        = np.array([[T,         0],\
                      [0,         0],\
                      [0,         0],\
-                     [0, alpha * T]])                                 # 4x1
+                     [0, alpha * T]])                                # 4x2
 
 D_ksi    = np.array([[sigma_psi**2,            0],\
-                     [           0, sigma_ksi**2]])                   # 2x2
+                     [           0, sigma_ksi**2]])                  # 2x2
 
     
-psi_ksi  = np.array([[psi_list[0]],\
-                     [ksi_list[0]]])       
-    
-    
-D_n      = np.array([[sigma_n**2]])                                    #1x1
+D_n      = np.array([[sigma_n**2]])                                  # 1x1
 
 F        = np.array([[1, 0, 0,               0],\
                      [0, 1, T,               0],\
@@ -98,18 +94,25 @@ W22      = 0
 W        = np.array([[W11, W12],\
                      [W21, W22]])
     
-    
 k   = 0
 t_k = 0
+t_k_list         = []
+Epsilon_phi_list = []
+D_phi_max_list   = []
+D_phi_min_list   = []
+S_sin_list       = []
+phi_p_list       = []
+
 while t_k < mod_time:
     t_k +=T
+    t_k_list.append(t_k)
     
     """----------------------Входное воздействие----------------------------"""
-    X_true  = F.dot(X_true) + G.dot(psi_ksi)
-    
     psi_ksi = np.array([[psi_list[k]],\
                         [ksi_list[k]]]) 
-        
+    
+    X_true  = F.dot(X_true) + G.dot(psi_ksi)
+    
     # амплитуда
     if t_k < 1:
         X_true[0][0] = 0.5
@@ -128,22 +131,24 @@ while t_k < mod_time:
     W22          = (N *((X_extr[0][0])**2))/(2 * sigma_n**2)
     
     """--------------------------Коррелятор---------------------------------"""
-    # фаза
+    # фаза на w_p
     phi_p        = np.array(range(0, N, 1)) * T_d * w_p
+    
     
     y            = X_true[0][0] * np.cos(phi_p + X_true[1][0]) + n_list[k]
     
-    S_sin        = np.sin(phi_p + X_corr[1][0])
+    S_sin        = np.sin(phi_p + X_extr[1][0])
     
-    S_cos        = np.cos(phi_p + X_corr[1][0])
+    
+    S_cos        = np.cos(phi_p + X_extr[1][0])
     
     I            = np.sum(np.dot(y, S_cos))
     
     Q            = np.sum(np.dot(y, S_sin))
     
-    U_1          = I * (1/D_n) - (X_extr[0][0] * N)/(2 * D_n)
+    U_1          = I * (1/D_n) - ((X_extr[0][0] * N)/(2 * D_n))
     
-    U_2          = Q * (X_extr[0][0])/(D_n)
+    U_2          = Q * ((-X_extr[0][0])/(D_n))
     
     U            = np.array([U_1[0],\
                              U_2[0]])
@@ -152,27 +157,39 @@ while t_k < mod_time:
     
     D_x_corr     = inv(inv(D_x_extr) + ((C.transpose().dot(W)).dot(C)))  # 4x4        
     
-    X_corr       = X_extr + ((D_x_corr.dot(C.transpose())).dot(U))     # 4x1
+    X_corr       = X_extr + ((D_x_corr.dot(C.transpose())).dot(U))       # 4x1
     
     k+=1
     
+    # мгновенная ошибка фильтрации фазы
+    Epsilon_phi = X_corr[1][0] - X_true[1][0] 
+    Epsilon_phi_list.append(Epsilon_phi)
+    # предельные границы ошибок фильтрации фазы по уровню 3 сигма
+    D_phi_max =  3 * math.sqrt(D_x_corr[1][1])
+    D_phi_max_list.append(D_phi_max)
+    D_phi_min = -3 * math.sqrt(D_x_corr[1][1])
+    D_phi_min_list.append(D_phi_min)
+    
     print('--------------')
     print('Шаг №' + str(k))
-    print(X_corr)
+    print('X_corr = ' + str(X_corr))
     print('             ')
     
-    
 
-    
-# plt.figure(1)
-# plt.plot(t_list[0::], Omega_true_list[0::], '.', color = 'mediumblue', linewidth = 1)
-# plt.plot(t_list[0::], Omega_corr_list[0::], '.-', color = 'magenta', linewidth = 1)
-# plt.xlabel('t, с')
-# plt.ylabel('Omega_true(t), Omega_corr(t), рад/с')
-# plt.legend(['Omega_true(t)', 'Omega_corr(t)'])
-# plt.title('Зависимость истинной доплеровской частоты и ее оценки от времени')
-# plt.grid()
-# plt.show()  
+"""----------------------Сохранение и вывод результатов---------------------"""
+
+
+plt.figure(1)
+plt.plot(t_k_list, Epsilon_phi_list, '.-', color = 'blueviolet', linewidth = 1)
+plt.plot(t_k_list, D_phi_max_list, '.-', color = 'red', linewidth = 1)
+plt.plot(t_k_list, D_phi_min_list, '.-', color = 'red', linewidth = 1)
+plt.xlabel('t, с')
+plt.ylabel('Epsilon_phi(t), рад/с')
+plt.title('')
+plt.grid()
+plt.show() 
+
+
 
 # plt.figure(2)
 # plt.plot(t_list[0::], sigma_Omega_corr_list[0::], '.-', color = 'blueviolet', linewidth = 1)
