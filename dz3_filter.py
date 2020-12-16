@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 """-----------------------------Параметры моделирования---------------------"""
 T        = 10  * 1e-3 
 T_d      = 0.2 * 1e-6
-mod_time = 2                # в секундах
+mod_time = 5                # в секундах
 c        = 3 * 1e8
 w0       = 2 * math.pi * 1602 * 1e6
 w_p      = 2 * math.pi * 2    * 1e6
@@ -86,7 +86,6 @@ F        = np.array([[1, 0, 0,               0],\
                      [0, 0, 0, (1 - alpha * T)]])                    # 4x4
 
 
-W11      = (N)/(2 * sigma_n**2)
 W12      = 0
 W21      = 0
 # W22 пересчитывается после экстраполяции
@@ -101,6 +100,13 @@ D_phi_max_list   = []
 D_phi_min_list   = []
 S_sin_list       = []
 phi_p_list       = []
+Epsilon_a_list   = []
+D_a_max_list     = []
+D_a_min_list     = []
+Epsilon_w_list   = []
+D_w_max_list     = []
+D_w_min_list     = []
+
 
 while t_k < mod_time:
     t_k +=T
@@ -127,7 +133,15 @@ while t_k < mod_time:
 
     D_x_extr     = D_x_extr_pt1 + D_x_extr_pt2                     # 4x4
 
+
+
+    W11      = (N)/(2 * sigma_n**2)
+    
     W22          = (N *((X_extr[0][0])**2))/(2 * sigma_n**2)
+    
+    W            = np.array([[W11, W12],\
+                             [W21, W22]])
+            
     
     """--------------------------Коррелятор---------------------------------"""
     # фаза на w_p
@@ -152,9 +166,7 @@ while t_k < mod_time:
                              U_2[0]])
         
     """------------------------------Коррекция------------------------------"""
-    
-    W            = np.array([[W11, W12],\
-                             [W21, W22]])
+
     
     D_x_corr     = inv(inv(D_x_extr) + ((C.transpose().dot(W)).dot(C)))  # 4x4        
     
@@ -163,13 +175,33 @@ while t_k < mod_time:
     k+=1
     
     # мгновенная ошибка фильтрации фазы
-    Epsilon_phi = X_corr[1][0] - X_true[1][0] 
+    Epsilon_phi = math.degrees(X_corr[1][0] - X_true[1][0])
     Epsilon_phi_list.append(Epsilon_phi)
     # предельные границы ошибок фильтрации фазы по уровню 3 сигма
-    D_phi_max =  3 * math.sqrt(D_x_corr[1][1])
+    D_phi_max =  math.degrees(3 * math.sqrt(D_x_corr[1][1]))
     D_phi_max_list.append(D_phi_max)
-    D_phi_min = -3 * math.sqrt(D_x_corr[1][1])
+    D_phi_min = math.degrees(-3 * math.sqrt(D_x_corr[1][1]))
     D_phi_min_list.append(D_phi_min)
+    
+    
+    # мгновенная ошибка фильтрации амплитуды
+    Epsilon_a = X_corr[0][0] - X_true[0][0]
+    Epsilon_a_list.append(Epsilon_a)
+    # предельные границы ошибок фильтрации амплитуды по уровню 3 сигма
+    D_a_max =  3 * math.sqrt(D_x_corr[0][0])
+    D_a_max_list.append(D_a_max)
+    D_a_min = -3 * math.sqrt(D_x_corr[0][0])
+    D_a_min_list.append(D_a_min)
+    
+    
+    # мгновенная ошибка фильтрации частоты
+    Epsilon_w = X_corr[2][0] - X_true[2][0]
+    Epsilon_w_list.append(Epsilon_w)
+    # предельные границы ошибок фильтрации частоты по уровню 3 сигма
+    D_w_max =  3 * math.sqrt(D_x_corr[2][2])
+    D_w_max_list.append(D_w_max)
+    D_w_min = -3 * math.sqrt(D_x_corr[2][2])
+    D_w_min_list.append(D_w_min)
     
     print('--------------')
     print('Шаг №' + str(k))
@@ -185,42 +217,29 @@ plt.plot(t_k_list, Epsilon_phi_list, '.-', color = 'blueviolet', linewidth = 1)
 plt.plot(t_k_list, D_phi_max_list, '.-', color = 'red', linewidth = 1)
 plt.plot(t_k_list, D_phi_min_list, '.-', color = 'red', linewidth = 1)
 plt.xlabel('t, с')
-plt.ylabel('Epsilon_phi(t), рад/с')
+plt.ylabel('Epsilon_phi(t), град/с')
 plt.title('')
 plt.grid()
 plt.show() 
 
 
-# plt.figure(2)
-# plt.plot(t_list[0::], sigma_Omega_corr_list[0::], '.-', color = 'blueviolet', linewidth = 1)
-# plt.xlabel('t, с')
-# plt.ylabel('σΩ_corr(t), рад/с')
-# plt.title('Зависимость СКО ошибки оценивания доплеровской частоты от времени')
-# plt.grid()
-# plt.show() 
+plt.figure(2)
+plt.plot(t_k_list, Epsilon_a_list, '.-', color = 'blueviolet', linewidth = 1)
+plt.plot(t_k_list, D_a_max_list, '.-', color = 'red', linewidth = 1)
+plt.plot(t_k_list, D_a_min_list, '.-', color = 'red', linewidth = 1)
+plt.xlabel('t, с')
+plt.ylabel('Epsilon_a(t)')
+plt.title('')
+plt.grid()
+plt.show()
 
-# plt.figure(3)
-# plt.plot(t_list[0::], Eps_Omega_list[0::], '.-', color = 'orangered', linewidth = 1)
-# plt.xlabel('t, с')
-# plt.ylabel('Eps_Omega(t), рад/с')
-# plt.legend(['Eps_Omega(t)'])
-# plt.title('Зависимость мгновенной ошибки фильтрации частоты от времени')
-# plt.grid()
-# plt.show() 
+plt.figure(3)
+plt.plot(t_k_list, Epsilon_w_list, '.-', color = 'blueviolet', linewidth = 1)
+plt.plot(t_k_list, D_w_max_list, '.-', color = 'red', linewidth = 1)
+plt.plot(t_k_list, D_w_min_list, '.-', color = 'red', linewidth = 1)
+plt.xlabel('t, с')
+plt.ylabel('Epsilon_a(t), рад/с')
+plt.title('')
+plt.grid()
+plt.show()
 
-# plt.figure(4)
-# plt.plot(t_list[0::], D11_list[0::], '.-', color = 'blueviolet', linewidth = 1)
-# plt.plot(t_list[0::], Eps_Omega_list[0::], '.-', color = 'orangered', linewidth = 1)
-# plt.xlabel('t, с')
-# plt.ylabel('D11(t), (рад/с)^2;  Eps_Omega(t), рад/с')
-# plt.legend(['D11(t)','Eps_Omega(t)'])
-# plt.grid()
-# plt.show() 
-
-# plt.figure(5)
-# plt.plot(t_list[0::], Omega_true_list[0::], '.', color = 'mediumblue', linewidth = 1)
-# plt.xlabel('t, с')
-# plt.ylabel('Omega_true(t), рад/с')
-# plt.title('Зависимость истинной доплеровской частоты от времени')
-# plt.grid()
-# plt.show()  
