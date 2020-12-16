@@ -13,7 +13,7 @@ import matplotlib.pyplot as plt
 T        = 10  * 1e-3 
 T_d      = 0.2 * 1e-6
 mod_time = 2                # в секундах
-c        = 3* 1e8
+c        = 3 * 1e8
 w0       = 2 * math.pi * 1602 * 1e6
 w_p      = 2 * math.pi * 2    * 1e6
 alpha    = 1
@@ -65,9 +65,9 @@ C        = np.array([[1, 0, 0, 0],\
                      [0, 1, 0, 0]])                                  # 1x2
 
 D_x_corr = np.array([[(0.3)**2, 0, 0, 0],\
-                      [0, (math.pi)**2, 0, 0],\
-                      [0, 0, 34**2, 0],\
-                      [0, 0, 0, 340**2]])                            # 4x4
+                     [0, (math.pi)**2, 0, 0],\
+                     [0, 0, 34**2, 0],\
+                     [0, 0, 0, 340**2]])                            # 4x4
    
 G        = np.array([[T,         0],\
                      [0,         0],\
@@ -91,8 +91,7 @@ W12      = 0
 W21      = 0
 # W22 пересчитывается после экстраполяции
 W22      = 0
-W        = np.array([[W11, W12],\
-                     [W21, W22]])
+
     
 k   = 0
 t_k = 0
@@ -139,7 +138,6 @@ while t_k < mod_time:
     
     S_sin        = np.sin(phi_p + X_extr[1][0])
     
-    
     S_cos        = np.cos(phi_p + X_extr[1][0])
     
     I            = np.sum(np.dot(y, S_cos))
@@ -154,6 +152,9 @@ while t_k < mod_time:
                              U_2[0]])
         
     """------------------------------Коррекция------------------------------"""
+    
+    W            = np.array([[W11, W12],\
+                             [W21, W22]])
     
     D_x_corr     = inv(inv(D_x_extr) + ((C.transpose().dot(W)).dot(C)))  # 4x4        
     
@@ -188,7 +189,6 @@ plt.ylabel('Epsilon_phi(t), рад/с')
 plt.title('')
 plt.grid()
 plt.show() 
-
 
 
 # plt.figure(2)
