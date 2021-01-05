@@ -1,3 +1,4 @@
+
 # -*- coding: utf-8 -*-
 """
 Created on Wed Dec  9 13:21:03 2020
@@ -8,11 +9,12 @@ import numpy as np
 import math
 from numpy.linalg import inv
 import matplotlib.pyplot as plt
+import random
 
 """-----------------------------Параметры моделирования---------------------"""
 T        = 10  * 1e-3 
 T_d      = 0.2 * 1e-6
-mod_time = 5                # в секундах
+mod_time = 20               # в секундах
 c        = 3 * 1e8
 w0       = 2 * math.pi * 1602 * 1e6
 w_p      = 2 * math.pi * 2    * 1e6
@@ -34,7 +36,6 @@ ksi_list  = np.random.normal(loc = 0.0, scale = sigma_ksi * 1, size = N)
 
 # шум наблюдения
 sigma_n   = 35.4
-n_list    = np.random.normal(loc = 0.0, scale = sigma_n * 1, size = N)
 
 """---------------------------Инициализация--------------------------------"""
 # начальные значения истинных параметров
@@ -85,12 +86,8 @@ F        = np.array([[1, 0, 0,               0],\
                      [0, 0, 1,               T],\
                      [0, 0, 0, (1 - alpha * T)]])                    # 4x4
 
-
 W12      = 0
 W21      = 0
-# W22 пересчитывается после экстраполяции
-W22      = 0
-
     
 k   = 0
 t_k = 0
@@ -106,7 +103,7 @@ D_a_min_list     = []
 Epsilon_w_list   = []
 D_w_max_list     = []
 D_w_min_list     = []
-
+D_phi_list       = []
 
 while t_k < mod_time:
     t_k +=T
@@ -120,9 +117,9 @@ while t_k < mod_time:
     
     # амплитуда
     if t_k < 1:
-        X_true[0][0] = 0.5
-    elif t_k >= 1:
         X_true[0][0] = 1
+    elif t_k >= 1:
+        X_true[0][0] = 0.5
     
     """----------------------------Экстраполяция----------------------------"""
     X_extr       = F.dot(X_corr)                                   # 4x1
@@ -133,22 +130,20 @@ while t_k < mod_time:
 
     D_x_extr     = D_x_extr_pt1 + D_x_extr_pt2                     # 4x4
 
-
-
-    W11      = (N)/(2 * sigma_n**2)
+    W11          = (N)/(2 * sigma_n**2)
     
     W22          = (N *((X_extr[0][0])**2))/(2 * sigma_n**2)
     
     W            = np.array([[W11, W12],\
                              [W21, W22]])
             
-    
     """--------------------------Коррелятор---------------------------------"""
     # фаза на w_p
     phi_p        = np.array(range(0, N, 1)) * T_d * w_p
     
+    n_list       = np.random.normal(loc = 0.0, scale = sigma_n * 1, size = N)
     
-    y            = X_true[0][0] * np.cos(phi_p + X_true[1][0]) + n_list[k]
+    y            = X_true[0][0] * np.cos(phi_p + X_true[1][0]) + n_list
     
     S_sin        = np.sin(phi_p + X_extr[1][0])
     
@@ -166,13 +161,11 @@ while t_k < mod_time:
                              U_2[0]])
         
     """------------------------------Коррекция------------------------------"""
-
     
     D_x_corr     = inv(inv(D_x_extr) + ((C.transpose().dot(W)).dot(C)))  # 4x4        
     
     X_corr       = X_extr + ((D_x_corr.dot(C.transpose())).dot(U))       # 4x1
     
-    k+=1
     
     # мгновенная ошибка фильтрации фазы
     Epsilon_phi = math.degrees(X_corr[1][0] - X_true[1][0])
@@ -182,6 +175,12 @@ while t_k < mod_time:
     D_phi_max_list.append(D_phi_max)
     D_phi_min = math.degrees(-3 * math.sqrt(D_x_corr[1][1]))
     D_phi_min_list.append(D_phi_min)
+    
+    # сохраняю дисперсию ошибки фазы для дз4 (из графика)
+
+    D_phi_before = 23.6441
+
+    D_phi_after  = 42.94
     
     
     # мгновенная ошибка фильтрации амплитуды
@@ -203,6 +202,8 @@ while t_k < mod_time:
     D_w_min = -3 * math.sqrt(D_x_corr[2][2])
     D_w_min_list.append(D_w_min)
     
+    k+=1
+    
     print('--------------')
     print('Шаг №' + str(k))
     print('X_corr = ' + str(X_corr))
@@ -212,7 +213,7 @@ while t_k < mod_time:
 """----------------------Сохранение и вывод результатов---------------------"""
 
 
-plt.figure(1)
+plt.figure(11)
 plt.plot(t_k_list, Epsilon_phi_list, '.-', color = 'blueviolet', linewidth = 1)
 plt.plot(t_k_list, D_phi_max_list, '.-', color = 'red', linewidth = 1)
 plt.plot(t_k_list, D_phi_min_list, '.-', color = 'red', linewidth = 1)
@@ -223,7 +224,7 @@ plt.grid()
 plt.show() 
 
 
-plt.figure(2)
+plt.figure(12)
 plt.plot(t_k_list, Epsilon_a_list, '.-', color = 'blueviolet', linewidth = 1)
 plt.plot(t_k_list, D_a_max_list, '.-', color = 'red', linewidth = 1)
 plt.plot(t_k_list, D_a_min_list, '.-', color = 'red', linewidth = 1)
@@ -233,7 +234,7 @@ plt.title('')
 plt.grid()
 plt.show()
 
-plt.figure(3)
+plt.figure(13)
 plt.plot(t_k_list, Epsilon_w_list, '.-', color = 'blueviolet', linewidth = 1)
 plt.plot(t_k_list, D_w_max_list, '.-', color = 'red', linewidth = 1)
 plt.plot(t_k_list, D_w_min_list, '.-', color = 'red', linewidth = 1)
